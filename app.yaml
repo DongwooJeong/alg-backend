@@ -1,0 +1,7 @@
+runtime: nodejs20
+
+env_variables:
+  DB_USER: root
+  DB_PASS: 1234
+  INSTANCE_CONNECTION_NAME: backend-424707:asia-northeast3:mysql-dw
+  INSTANCE_UNIX_SOCKET : /cloudsql/backend-424707:asia-northeast3:mysql-dw
