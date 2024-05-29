@@ -7,9 +7,8 @@ const financialsRoutes = require('./routes/financialsRoutes');
 const app = express();
 
 
-// CORS 미들웨어 적용
 app.use(cors({
-    origin: 'https://algorithm-experiment-c09a8ea350bf.herokuapp.com'
+    origin: ['https://alg-experiment.vercel.app', 'https://algorithm-experiment-c09a8ea350bf.herokuapp.com']
 }));
 
 // 요청 본문 파싱을 위한 미들웨어
