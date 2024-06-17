@@ -27,22 +27,22 @@ router.post('/round-actions', async (req, res) => {
             updateParams.push(action.recTimestamp);
         }
 
-        // 사용자 선호도 조사 처리 수정
-        for (let i = 1; i <= 5; i++) {
-            if (action[`preference_${round}_${i}`]) { // 수정된 접근 방식
-                setColumns.push(`preference_${round}_${i}`);
-                queryParams.push(action[`preference_${round}_${i}`]);
-                updateParams.push(action[`preference_${round}_${i}`]);
-            }
-        }
-        if (action.preferenceTimestamp) {
-            setColumns.push(`preference_timestamp_${round}`);
-            queryParams.push(action.preferenceTimestamp);
-            updateParams.push(action.preferenceTimestamp);
-        }
+        // // 사용자 선호도 조사 처리 수정
+        // for (let i = 1; i <= 5; i++) {
+        //     if (action[`preference_${round}_${i}`]) { // 수정된 접근 방식
+        //         setColumns.push(`preference_${round}_${i}`);
+        //         queryParams.push(action[`preference_${round}_${i}`]);
+        //         updateParams.push(action[`preference_${round}_${i}`]);
+        //     }
+        // }
+        // if (action.preferenceTimestamp) {
+        //     setColumns.push(`preference_timestamp_${round}`);
+        //     queryParams.push(action.preferenceTimestamp);
+        //     updateParams.push(action.preferenceTimestamp);
+        // }
 
         const query = `
-            INSERT INTO round_answer (email, ${setColumns.join(', ')})
+            INSERT INTO round_answers (email, ${setColumns.join(', ')})
             VALUES (${queryParams.map(() => '?').join(', ')})
             ON DUPLICATE KEY UPDATE ${setColumns.map((column, index) => `${column} = VALUES(${column})`).join(', ')};
         `;
@@ -56,52 +56,52 @@ router.post('/round-actions', async (req, res) => {
     }
 });
 
-router.post('/user-preferences', async (req, res) => {
-    const { email, preferences, preferenceTimestamp, round } = req.body;
+// router.post('/user-preferences', async (req, res) => {
+//     const { email, preferences, preferenceTimestamp, round } = req.body;
 
-    // 컬럼 이름 동적으로 생성
-    const preferenceColumns = [
-        `preference_${round}_1`,
-        `preference_${round}_2`,
-        `preference_${round}_3`,
-        `preference_${round}_4`,
-        `preference_${round}_5`,
-        `preference_timestamp_${round}`
-    ];
+//     // 컬럼 이름 동적으로 생성
+//     const preferenceColumns = [
+//         `preference_${round}_1`,
+//         `preference_${round}_2`,
+//         `preference_${round}_3`,
+//         `preference_${round}_4`,
+//         `preference_${round}_5`,
+//         `preference_timestamp_${round}`
+//     ];
 
-    // ON DUPLICATE KEY UPDATE 절에 사용될 컬럼=값 쌍을 동적으로 생성
-    const onDuplicateKeyUpdate = preferenceColumns
-        .map(column => `${column} = VALUES(${column})`)
-        .join(', ');
+//     // ON DUPLICATE KEY UPDATE 절에 사용될 컬럼=값 쌍을 동적으로 생성
+//     const onDuplicateKeyUpdate = preferenceColumns
+//         .map(column => `${column} = VALUES(${column})`)
+//         .join(', ');
 
-    const query = `
-        INSERT INTO round_answer (
-            email, 
-            ${preferenceColumns.join(', ')}
-        )
-        VALUES (?, ?, ?, ?, ?, ?, ?)
-        ON DUPLICATE KEY UPDATE
-            ${onDuplicateKeyUpdate};
-    `;
+//     const query = `
+//         INSERT INTO round_answer (
+//             email, 
+//             ${preferenceColumns.join(', ')}
+//         )
+//         VALUES (?, ?, ?, ?, ?, ?, ?)
+//         ON DUPLICATE KEY UPDATE
+//             ${onDuplicateKeyUpdate};
+//     `;
 
-    const values = [
-        email,
-        preferences.preference_1,
-        preferences.preference_2,
-        preferences.preference_3,
-        preferences.preference_4,
-        preferences.preference_5,
-        preferenceTimestamp
-    ];
+//     const values = [
+//         email,
+//         preferences.preference_1,
+//         preferences.preference_2,
+//         preferences.preference_3,
+//         preferences.preference_4,
+//         preferences.preference_5,
+//         preferenceTimestamp
+//     ];
 
-    try {
-        await db.query(query, values);
-        res.status(200).send('User preferences saved successfully');
-    } catch (error) {
-        console.error('An error occurred', error);
-        res.status(500).send('Failed to save user preferences');
-    }
-});
+//     try {
+//         await db.query(query, values);
+//         res.status(200).send('User preferences saved successfully');
+//     } catch (error) {
+//         console.error('An error occurred', error);
+//         res.status(500).send('Failed to save user preferences');
+//     }
+// });
 
 
 
@@ -115,7 +115,7 @@ router.post('/invest-decision', async (req, res) => {
 
     try {
         const query = `
-            INSERT INTO round_answer (
+            INSERT INTO round_answers (
                 email, 
                 ${selectedStockColumn}, ${decisionTimestampColumn}
             )

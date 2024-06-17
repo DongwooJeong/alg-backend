@@ -130,6 +130,67 @@ router.post('/survey2', async (req, res) => {
     }
   });
 
+
+  router.post('/survey-nc', async (req, res) => {
+    const { userEmail, answers } = req.body;
+  
+    try {
+      const query = `
+        INSERT INTO survey_nc_responses (
+            email, q1, q2, q3, q4, q5, q6, q7, q8, q9,
+            q10, q11, q12, q13, q14, q15, q16, q17, q18
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ON DUPLICATE KEY UPDATE
+            q1 = VALUES(q1), q2 = VALUES(q2), q3 = VALUES(q3), q4 = VALUES(q4),
+            q5 = VALUES(q5), q6 = VALUES(q6), q7 = VALUES(q7), q8 = VALUES(q8),
+            q9 = VALUES(q9), q10 = VALUES(q10), q11 = VALUES(q11), q12 = VALUES(q12),
+            q13 = VALUES(q13), q14 = VALUES(q14), q15 = VALUES(q15),
+            q16 = VALUES(q16), q17 = VALUES(q17), q18 = VALUES(q18);
+      `;
+  
+        await db.query(query, [
+            userEmail, answers[0], answers[1], answers[2], answers[3], answers[4],
+            answers[5], answers[6], answers[7], answers[8], answers[9], answers[10],
+            answers[11], answers[12], answers[13], answers[14], answers[15],
+            answers[16], answers[17]
+        ]);
+  
+        res.status(200).json({ message: 'Survey answers saved successfully' });
+    } catch (error) {
+        console.error('Error saving survey answers:', error);
+        res.status(500).json({ message: 'Failed to save survey answers' });
+    }
+});
+
+router.post('/survey-ip', async (req, res) => {
+    const { userEmail, answers } = req.body;
+  
+    if (answers.length !== 5) {
+      return res.status(400).json({ message: 'Invalid survey data. Expected 5 answers.' });
+    }
+  
+    try {
+      const query = `
+        INSERT INTO survey_ip_responses (
+            email, q1, q2, q3, q4, q5
+        ) VALUES (?, ?, ?, ?, ?, ?)
+        ON DUPLICATE KEY UPDATE
+            q1 = VALUES(q1), q2 = VALUES(q2), q3 = VALUES(q3), q4 = VALUES(q4), q5 = VALUES(q5);
+      `;
+  
+      await db.query(query, [
+          userEmail,
+          answers[0], answers[1], answers[2], answers[3], answers[4]
+      ]);
+  
+      res.status(200).json({ message: 'Investment survey answers saved successfully' });
+    } catch (error) {
+      console.error('Error saving investment survey answers:', error);
+      res.status(500).json({ message: 'Failed to save investment survey answers' });
+    }
+  });
+  
+
 router.post('/send-password', async (req, res) => {
     const { email } = req.body;
     try {

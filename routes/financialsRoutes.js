@@ -38,7 +38,7 @@ router.get('/user-selected-stock/:userId/:round', async (req, res) => {
   const { userId, round } = req.params;
   try {
     const columnName = `selected_stock_${round}`;
-    const query = `SELECT ${columnName} FROM round_answer WHERE email = ?`;
+    const query = `SELECT ${columnName} FROM round_answers WHERE email = ?`;
 
     const [rows] = await db.query(query, [userId]);
     if (rows.length > 0) {
