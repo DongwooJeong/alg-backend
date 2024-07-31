@@ -7,7 +7,7 @@ router.get('/financials/:round', async (req, res) => {
   const round = parseInt(req.params.round, 10);
   const offset = (round - 1) * 5;
   
-  const query = 'SELECT * FROM tickers100 where base_price_date = "2024-01-02" LIMIT 5 OFFSET ?';
+  const query = 'SELECT * FROM stock_table WHERE base_price_date = "2024-01-02" LIMIT 5 OFFSET ?';
   try {
     const [results] = await db.query(query, [offset]);
     res.json(results);
@@ -21,7 +21,7 @@ router.get('/aiRecommendations/:round', async (req, res) => {
   const round = parseInt(req.params.round, 10);
   const offset = round - 1;
   
-  const query = 'SELECT company FROM tickers100 WHERE symbol = (SELECT symbol FROM ai_rec LIMIT 1 OFFSET ?)';
+  const query = 'SELECT company_id FROM stock_table WHERE Ticker = (SELECT symbol FROM ai_rec LIMIT 1 OFFSET ?)';
   try {
     const [results] = await db.query(query, [offset]);
     if (results.length > 0) {

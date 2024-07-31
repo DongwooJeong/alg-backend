@@ -70,8 +70,10 @@ router.post('/survey', async (req, res) => {
         INSERT INTO survey_responses (
           email, gender, age_range, education_level, occupation,
           ai_experience, ai_helpfulness, ai_trustworthiness,
-          investment_experience, ai_investment_awareness, ai_investment_trust
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          investment_experience, ai_investment_awareness, ai_investment_trust,
+          per_familiarity, pbr_familiarity, dividend_yield_familiarity, 
+          market_cap_familiarity, beta_familiarity
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ON DUPLICATE KEY UPDATE
           gender = VALUES(gender), 
           age_range = VALUES(age_range), 
@@ -82,12 +84,18 @@ router.post('/survey', async (req, res) => {
           ai_trustworthiness = VALUES(ai_trustworthiness),
           investment_experience = VALUES(investment_experience),
           ai_investment_awareness = VALUES(ai_investment_awareness), 
-          ai_investment_trust = VALUES(ai_investment_trust);
+          ai_investment_trust = VALUES(ai_investment_trust),
+          per_familiarity = VALUES(per_familiarity),
+          pbr_familiarity = VALUES(pbr_familiarity),
+          dividend_yield_familiarity = VALUES(dividend_yield_familiarity),
+          market_cap_familiarity = VALUES(market_cap_familiarity),
+          beta_familiarity = VALUES(beta_familiarity);
       `;
   
       await db.query(query, [
         userEmail, answers[0], answers[1], answers[2], answers[3],
-        answers[4], answers[5], answers[6], answers[7], answers[8], answers[9]
+        answers[4], answers[5], answers[6], answers[7], answers[8], answers[9],
+        answers[11], answers[12], answers[13], answers[14], answers[15]
       ]);
   
       res.status(200).json({ message: 'Survey answers saved successfully' });
@@ -95,7 +103,8 @@ router.post('/survey', async (req, res) => {
       console.error('Error saving survey answers:', error);
       res.status(500).json({ message: 'Failed to save survey answers' });
     }
-  });
+});
+
 
 router.post('/survey2', async (req, res) => {
     // 클라이언트로부터 받은 사용자 이메일과 답변 배열

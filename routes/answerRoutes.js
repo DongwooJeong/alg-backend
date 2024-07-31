@@ -16,30 +16,12 @@ router.post('/round-actions', async (req, res) => {
             queryParams.push(action.recCheck);
             updateParams.push(action.recCheck);
         }
-        if (action.recType) {
-            setColumns.push(`rec_type_${round}`);
-            queryParams.push(action.recType);
-            updateParams.push(action.recType);
-        }
         if (action.recTimestamp) {
             setColumns.push(`rec_timestamp_${round}`);
             queryParams.push(action.recTimestamp);
             updateParams.push(action.recTimestamp);
         }
 
-        // // 사용자 선호도 조사 처리 수정
-        // for (let i = 1; i <= 5; i++) {
-        //     if (action[`preference_${round}_${i}`]) { // 수정된 접근 방식
-        //         setColumns.push(`preference_${round}_${i}`);
-        //         queryParams.push(action[`preference_${round}_${i}`]);
-        //         updateParams.push(action[`preference_${round}_${i}`]);
-        //     }
-        // }
-        // if (action.preferenceTimestamp) {
-        //     setColumns.push(`preference_timestamp_${round}`);
-        //     queryParams.push(action.preferenceTimestamp);
-        //     updateParams.push(action.preferenceTimestamp);
-        // }
 
         const query = `
             INSERT INTO round_answers (email, ${setColumns.join(', ')})
@@ -56,54 +38,85 @@ router.post('/round-actions', async (req, res) => {
     }
 });
 
-// router.post('/user-preferences', async (req, res) => {
-//     const { email, preferences, preferenceTimestamp, round } = req.body;
+router.post('/user-preferences', async (req, res) => {
+    const { email, preferences, preferenceTimestamp, round } = req.body;
 
-//     // 컬럼 이름 동적으로 생성
-//     const preferenceColumns = [
-//         `preference_${round}_1`,
-//         `preference_${round}_2`,
-//         `preference_${round}_3`,
-//         `preference_${round}_4`,
-//         `preference_${round}_5`,
-//         `preference_timestamp_${round}`
-//     ];
+    const preferenceColumns = [];
+    const values = [email];
 
-//     // ON DUPLICATE KEY UPDATE 절에 사용될 컬럼=값 쌍을 동적으로 생성
-//     const onDuplicateKeyUpdate = preferenceColumns
-//         .map(column => `${column} = VALUES(${column})`)
-//         .join(', ');
+    Object.keys(preferences).forEach((key, index) => {
+        const rankColumn = `preference_${round}_${index + 1}_rank`;
+        const prefColumn = `preference_${round}_${index + 1}_pref`;
+        preferenceColumns.push(rankColumn, prefColumn);
+        values.push(preferences[key].rank || null, preferences[key].preference || null);
+    });
 
-//     const query = `
-//         INSERT INTO round_answer (
-//             email, 
-//             ${preferenceColumns.join(', ')}
-//         )
-//         VALUES (?, ?, ?, ?, ?, ?, ?)
-//         ON DUPLICATE KEY UPDATE
-//             ${onDuplicateKeyUpdate};
-//     `;
+    preferenceColumns.push(`preference_timestamp_${round}`);
+    values.push(preferenceTimestamp);
 
-//     const values = [
-//         email,
-//         preferences.preference_1,
-//         preferences.preference_2,
-//         preferences.preference_3,
-//         preferences.preference_4,
-//         preferences.preference_5,
-//         preferenceTimestamp
-//     ];
-
-//     try {
-//         await db.query(query, values);
-//         res.status(200).send('User preferences saved successfully');
-//     } catch (error) {
-//         console.error('An error occurred', error);
-//         res.status(500).send('Failed to save user preferences');
-//     }
-// });
+    const placeholders = preferenceColumns.map(() => '?').join(', ');
+    const query = `
+    INSERT INTO round_answers (
+        email, 
+        preference_1_1_rank, preference_1_1_pref, 
+        preference_1_2_rank, preference_1_2_pref, 
+        preference_1_3_rank, preference_1_3_pref, 
+        preference_1_4_rank, preference_1_4_pref, 
+        preference_1_5_rank, preference_1_5_pref, 
+        preference_1_6_rank, preference_1_6_pref, 
+        preference_timestamp_1
+    )
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ON DUPLICATE KEY UPDATE 
+        preference_1_1_rank = VALUES(preference_1_1_rank), 
+        preference_1_1_pref = VALUES(preference_1_1_pref), 
+        preference_1_2_rank = VALUES(preference_1_2_rank), 
+        preference_1_2_pref = VALUES(preference_1_2_pref), 
+        preference_1_3_rank = VALUES(preference_1_3_rank), 
+        preference_1_3_pref = VALUES(preference_1_3_pref), 
+        preference_1_4_rank = VALUES(preference_1_4_rank), 
+        preference_1_4_pref = VALUES(preference_1_4_pref), 
+        preference_1_5_rank = VALUES(preference_1_5_rank), 
+        preference_1_5_pref = VALUES(preference_1_5_pref), 
+        preference_1_6_rank = VALUES(preference_1_6_rank), 
+        preference_1_6_pref = VALUES(preference_1_6_pref),
+        preference_timestamp_1 = VALUES(preference_timestamp_1);
+`;
 
 
+try {
+    await db.query(query, values);
+    res.status(200).send('사용자 선호도가 성공적으로 저장되었습니다.');
+} catch (error) {
+    console.error('선호도 저장 중 에러 발생:', error);
+    res.status(500).send('사용자 선호도 저장 실패');
+}
+
+});
+
+
+
+
+// 첫번째 투자결정
+router.post('/first-decision', async (req, res) => {
+    const { email, round, action } = req.body;
+  
+    let queryParams = [email, action.selectedStock, action.selectTimestamp];
+    const query = `
+        INSERT INTO round_answers (email, first_selected_stock_${round}, first_select_timestamp_${round})
+        VALUES (?, ?, ?)
+        ON DUPLICATE KEY UPDATE first_selected_stock_${round} = VALUES(first_selected_stock_${round}),
+                                first_select_timestamp_${round} = VALUES(first_select_timestamp_${round});
+    `;
+  
+    try {
+        await db.query(query, queryParams);
+        res.status(200).json({ message: 'Selection and timestamp saved successfully.' });
+    } catch (error) {
+        console.error('Error saving selection and timestamp:', error);
+        res.status(500).json({ message: 'Failed to save selection and timestamp.' });
+    }
+  });
 
 // 투자 결정 저장
 router.post('/invest-decision', async (req, res) => {
