@@ -51,48 +51,85 @@ router.post('/user-preferences', async (req, res) => {
         values.push(preferences[key].rank || null, preferences[key].preference || null);
     });
 
-    preferenceColumns.push(`preference_timestamp_${round}`);
+    const timestampColumn = `preference_timestamp_${round}`;
+    preferenceColumns.push(timestampColumn);
     values.push(preferenceTimestamp);
 
     const placeholders = preferenceColumns.map(() => '?').join(', ');
+    
+    // Dynamically construct the query with dynamic column names
     const query = `
     INSERT INTO round_answers (
         email, 
-        preference_1_1_rank, preference_1_1_pref, 
-        preference_1_2_rank, preference_1_2_pref, 
-        preference_1_3_rank, preference_1_3_pref, 
-        preference_1_4_rank, preference_1_4_pref, 
-        preference_1_5_rank, preference_1_5_pref, 
-        preference_1_6_rank, preference_1_6_pref, 
-        preference_timestamp_1
+        ${preferenceColumns.join(', ')}
     )
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    VALUES (?, ${placeholders})
     ON DUPLICATE KEY UPDATE 
-        preference_1_1_rank = VALUES(preference_1_1_rank), 
-        preference_1_1_pref = VALUES(preference_1_1_pref), 
-        preference_1_2_rank = VALUES(preference_1_2_rank), 
-        preference_1_2_pref = VALUES(preference_1_2_pref), 
-        preference_1_3_rank = VALUES(preference_1_3_rank), 
-        preference_1_3_pref = VALUES(preference_1_3_pref), 
-        preference_1_4_rank = VALUES(preference_1_4_rank), 
-        preference_1_4_pref = VALUES(preference_1_4_pref), 
-        preference_1_5_rank = VALUES(preference_1_5_rank), 
-        preference_1_5_pref = VALUES(preference_1_5_pref), 
-        preference_1_6_rank = VALUES(preference_1_6_rank), 
-        preference_1_6_pref = VALUES(preference_1_6_pref),
-        preference_timestamp_1 = VALUES(preference_timestamp_1);
-`;
+        ${preferenceColumns.map(col => `${col} = VALUES(${col})`).join(', ')};
+    `;
 
-
-try {
-    await db.query(query, values);
-    res.status(200).send('사용자 선호도가 성공적으로 저장되었습니다.');
-} catch (error) {
-    console.error('선호도 저장 중 에러 발생:', error);
-    res.status(500).send('사용자 선호도 저장 실패');
-}
-
+    try {
+        await db.query(query, values);
+        res.status(200).send('사용자 선호도가 성공적으로 저장되었습니다.');
+    } catch (error) {
+        console.error('선호도 저장 중 에러 발생:', error);
+        res.status(500).send('사용자 선호도 저장 실패');
+    }
 });
+
+// 이전 라운드 선호도 가져오기
+router.post('/get-user-preferences', async (req, res) => {
+    const { email, round } = req.body;
+
+    // Function to query preferences for a given round
+    const getPreferencesForRound = async (roundNumber) => {
+        const query = `
+        SELECT 
+            preference_${roundNumber}_1_rank AS rank1, 
+            preference_${roundNumber}_1_pref AS pref1,
+            preference_${roundNumber}_2_rank AS rank2,
+            preference_${roundNumber}_2_pref AS pref2,
+            preference_${roundNumber}_3_rank AS rank3,
+            preference_${roundNumber}_3_pref AS pref3,
+            preference_${roundNumber}_4_rank AS rank4,
+            preference_${roundNumber}_4_pref AS pref4,
+            preference_${roundNumber}_5_rank AS rank5,
+            preference_${roundNumber}_5_pref AS pref5,
+            preference_${roundNumber}_6_rank AS rank6,
+            preference_${roundNumber}_6_pref AS pref6
+        FROM round_answers 
+        WHERE email = ?;
+        `;
+        const [rows] = await db.query(query, [email]);
+        return rows.length > 0 ? rows[0] : null;
+    };
+
+    try {
+        let preferences = null;
+
+        // Check all previous rounds down to round 1
+        for (let i = round - 1; i >= 1; i--) {
+            preferences = await getPreferencesForRound(i);
+            if (preferences) {
+                // Check if all preferences are null or undefined
+                const allPreferencesNull = Object.values(preferences).every(pref => pref === null || pref === undefined);
+                if (!allPreferencesNull) {
+                    break;
+                }
+            }
+        }
+
+        if (preferences) {
+            res.status(200).json(preferences);
+        } else {
+            res.status(404).send('이전 라운드 데이터가 없습니다.');
+        }
+    } catch (error) {
+        console.error('이전 라운드 데이터 조회 중 에러 발생:', error);
+        res.status(500).send('데이터 조회 실패');
+    }
+});
+
 
 
 

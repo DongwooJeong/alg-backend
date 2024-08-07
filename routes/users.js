@@ -70,10 +70,10 @@ router.post('/survey', async (req, res) => {
         INSERT INTO survey_responses (
           email, gender, age_range, education_level, occupation,
           ai_experience, ai_helpfulness, ai_trustworthiness,
-          investment_experience, ai_investment_awareness, ai_investment_trust,
+          investment_experience, ai_investment_awareness, ai_investment_helpfulness, ai_investment_trust,
           per_familiarity, pbr_familiarity, dividend_yield_familiarity, 
           market_cap_familiarity, beta_familiarity
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ON DUPLICATE KEY UPDATE
           gender = VALUES(gender), 
           age_range = VALUES(age_range), 
@@ -84,6 +84,7 @@ router.post('/survey', async (req, res) => {
           ai_trustworthiness = VALUES(ai_trustworthiness),
           investment_experience = VALUES(investment_experience),
           ai_investment_awareness = VALUES(ai_investment_awareness), 
+          ai_investment_helpfulness = VALUES(ai_investment_helpfulness),
           ai_investment_trust = VALUES(ai_investment_trust),
           per_familiarity = VALUES(per_familiarity),
           pbr_familiarity = VALUES(pbr_familiarity),
@@ -94,8 +95,8 @@ router.post('/survey', async (req, res) => {
   
       await db.query(query, [
         userEmail, answers[0], answers[1], answers[2], answers[3],
-        answers[4], answers[5], answers[6], answers[7], answers[8], answers[9],
-        answers[11], answers[12], answers[13], answers[14], answers[15]
+        answers[4], answers[5], answers[6], answers[7], answers[8], answers[9], answers[10], 
+        answers[12], answers[13], answers[14], answers[15], answers[16],
       ]);
   
       res.status(200).json({ message: 'Survey answers saved successfully' });
@@ -114,8 +115,8 @@ router.post('/survey2', async (req, res) => {
       const query = `
       INSERT INTO survey2_responses (
           email, q1, q2, q3, q4,
-          q5, q6, q7
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+          q5, q6, q7, q8, q9
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       ON DUPLICATE KEY UPDATE
           q1 = VALUES(q1), 
           q2 = VALUES(q2), 
@@ -123,13 +124,15 @@ router.post('/survey2', async (req, res) => {
           q4 = VALUES(q4),
           q5 = VALUES(q5), 
           q6 = VALUES(q6), 
-          q7 = VALUES(q7);
+          q7 = VALUES(q7),
+          q8 = VALUES(q8),
+          q9 = VALUES(q9);
   `;
   
         // 사용자 이메일과 답변 배열을 쿼리 파라미터로 전달
         await db.query(query, [
             userEmail, answers[0], answers[1], answers[2], answers[3],
-            answers[4], answers[5], answers[6]
+            answers[4], answers[5], answers[6], answers[7], answers[8]
         ]);
   
         res.status(200).json({ message: 'Survey answers saved successfully' });
@@ -170,34 +173,6 @@ router.post('/survey2', async (req, res) => {
         res.status(500).json({ message: 'Failed to save survey answers' });
     }
 });
-
-router.post('/survey-ip', async (req, res) => {
-    const { userEmail, answers } = req.body;
-  
-    if (answers.length !== 5) {
-      return res.status(400).json({ message: 'Invalid survey data. Expected 5 answers.' });
-    }
-  
-    try {
-      const query = `
-        INSERT INTO survey_ip_responses (
-            email, q1, q2, q3, q4, q5
-        ) VALUES (?, ?, ?, ?, ?, ?)
-        ON DUPLICATE KEY UPDATE
-            q1 = VALUES(q1), q2 = VALUES(q2), q3 = VALUES(q3), q4 = VALUES(q4), q5 = VALUES(q5);
-      `;
-  
-      await db.query(query, [
-          userEmail,
-          answers[0], answers[1], answers[2], answers[3], answers[4]
-      ]);
-  
-      res.status(200).json({ message: 'Investment survey answers saved successfully' });
-    } catch (error) {
-      console.error('Error saving investment survey answers:', error);
-      res.status(500).json({ message: 'Failed to save investment survey answers' });
-    }
-  });
   
 
 router.post('/send-password', async (req, res) => {
